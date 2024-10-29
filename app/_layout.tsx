@@ -1,17 +1,22 @@
 import { Stack } from "expo-router";
+import { setStatusBarStyle } from "expo-status-bar";
+import { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 
 export default function RootLayout() {
+  useEffect(() => {
+    setTimeout(() => {
+      setStatusBarStyle("light");
+    }, 0);
+  }, []);
+
   return (
-    <>
-      <StatusBar style="light" />
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="+not-found"
-          options={{ title: "Opps, page not found!" }}
-        />
-      </Stack>
-    </>
+    <Stack>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="+not-found"
+        options={{ title: "Opps, page not found!" }}
+      />
+    </Stack>
   );
 }
