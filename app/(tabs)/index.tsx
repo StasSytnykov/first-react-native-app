@@ -1,6 +1,9 @@
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Platform } from "react-native";
+import * as MediaLibrary from "expo-media-library";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { captureRef } from "react-native-view-shot";
+import domtoimage from "dom-to-image";
 import * as ImagePicker from "expo-image-picker";
 import { type ImageSource } from "expo-image";
 import IconButton from "@/components/IconButton";
@@ -22,6 +25,12 @@ export default function Index() {
   const [pickedEmoji, setPickedEmoji] = useState<ImageSource | undefined>(
     undefined
   );
+  const [status, requestPermission] = MediaLibrary.usePermissions();
+  const imageRef = useRef(null);
+
+  if (status === null) {
+    requestPermission();
+  }
 
   const pickImageAsync = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -50,16 +59,51 @@ export default function Index() {
   };
 
   const onSaveImageAsync = async () => {
-    // we will implement this later
+    if (Platform.OS !== "web") {
+      try {
+        const localUri = await captureRef(imageRef, {
+          height: 440,
+          quality: 1,
+        });
+
+        await MediaLibrary.saveToLibraryAsync(localUri);
+        if (localUri) {
+          alert("Saved!");
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    } else {
+      try {
+        Node;
+        const dataUrl = await domtoimage.toJpeg(
+          imageRef.current as unknown as Node,
+          {
+            quality: 0.95,
+            width: 320,
+            height: 440,
+          }
+        );
+
+        let link = document.createElement("a");
+        link.download = "sticker-smash.jpeg";
+        link.href = dataUrl;
+        link.click();
+      } catch (e) {
+        console.log(e);
+      }
+    }
   };
 
   return (
     <GestureHandlerRootView style={styles.container}>
       <View style={styles.imageContainer}>
-        <ImageViewer imgSource={selectedImage || PlaceholderImage} />
-        {pickedEmoji && (
-          <EmojiSticker imageSize={40} stickerSource={pickedEmoji} />
-        )}
+        <View ref={imageRef} collapsable={false}>
+          <ImageViewer imgSource={selectedImage || PlaceholderImage} />
+          {pickedEmoji && (
+            <EmojiSticker imageSize={40} stickerSource={pickedEmoji} />
+          )}
+        </View>
       </View>
       {showAppOptions ? (
         <View style={styles.optionsContainer}>
